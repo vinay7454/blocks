@@ -11,7 +11,13 @@ public class GameBoard {
 		this.height = height;
 		blocks = new Block[height][width];
 	}
+	public int getRows(){
+		return this.height;
+	}
 	
+	public int getCols(){
+		return this.width;
+	}
 	/**
 	 * Place block at the specified location.
 	 * 

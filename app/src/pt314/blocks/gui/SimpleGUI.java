@@ -5,6 +5,10 @@ import java.awt.Dimension;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -20,21 +24,19 @@ import pt314.blocks.game.HorizontalBlock;
 import pt314.blocks.game.TargetBlock;
 import pt314.blocks.game.VerticalBlock;
 
+
 /**
  * Simple GUI test...
  */
 public class SimpleGUI extends JFrame implements ActionListener {
 
-	private static final int NUM_ROWS = 5;
-	private static final int NUM_COLS = 5;
+	private int NUM_ROWS;
+	private int NUM_COLS;
 
 	private GameBoard board;
-	
-	// currently selected block
 	private Block selectedBlock;
 	private int selectedBlockRow;
 	private int selectedBlockCol;
-
 	private GridButton[][] buttonGrid;
 	
 	private JMenuBar menuBar;
@@ -43,8 +45,12 @@ public class SimpleGUI extends JFrame implements ActionListener {
 	private JMenuItem exitMenuItem;
 	private JMenuItem aboutMenuItem;
 	
-	public SimpleGUI() {
+	public SimpleGUI(GameBoard board) {
 		super("Blocks");
+		
+		this.board = board;
+		this.NUM_ROWS = this.board.getRows();
+		this.NUM_COLS = this.board.getCols();
 		
 		initMenus();
 		
@@ -53,6 +59,109 @@ public class SimpleGUI extends JFrame implements ActionListener {
 		pack();
 		setVisible(true);
 		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+	}
+	
+
+	public static void main(String[] args) {
+		GameBoard newBoard = loadNewPuzzle(3);// The number here is 3 so it will load puzzle number 3.
+		new SimpleGUI(newBoard);
+	}
+
+	public static GameBoard loadNewPuzzle(int puzzleNumber){
+		GameBoard newGameBoard = null;
+		try {
+			FileInputStream fs;
+			int rows, cols;
+			
+
+			if(puzzleNumber == 1) {
+				fs= new FileInputStream("C://Users//BLACKBOX//Documents//GitHub//blocks//app//res//puzzles//puzzle-001.txt");
+			}
+			else if(puzzleNumber == 2) {
+				fs= new FileInputStream("C://Users//BLACKBOX//Documents//GitHub//blocks//app//res//puzzles//puzzle-002.txt");
+			}
+			else{
+				fs= new FileInputStream("C://Users//BLACKBOX//Documents//GitHub//blocks//app//res//puzzles//puzzle-003.txt");
+
+			}
+
+			//FileInputStream fs= new FileInputStream("C://Users//BLACKBOX//Documents//GitHub//blocks//app//res//puzzles//puzzle-001.txt");
+			BufferedReader br = new BufferedReader(new InputStreamReader(fs));
+			for(int i = 0; i <1; ++i){
+				String line = br.readLine(); 
+				rows = Integer.parseInt((line.split(" "))[0]);
+				//System.out.println(rows);
+				cols = Integer.parseInt((line.split(" "))[1]);
+				//System.out.println(cols);
+				//br.close();
+
+
+				if(rows <= 1 && cols <= 1){
+					System.out.println("The size is not valid.");
+					System.exit(0);
+				} else {
+					newGameBoard = createNewBoard(rows,cols,br);
+				}
+
+			}
+
+		} catch (Exception e) {
+			System.out.println("File not found.");
+			System.exit(0);
+		}
+
+
+
+		return newGameBoard;
+
+	}
+
+	public static GameBoard createNewBoard(int rows,int cols,BufferedReader puzzleReader) throws IOException{
+		GameBoard newBoard = new GameBoard(rows,cols);
+		int count = 0;
+
+
+		BufferedReader puzzle = puzzleReader;
+
+		for (int i = 0; i < rows; i++) {
+
+			String puzzleInputLine = puzzle.readLine();
+			Boolean targetBlockPresent = false;
+
+			for (int j = 0; j < cols; j++) {
+
+				char currentBlock = puzzleInputLine.charAt(j);
+
+				if(currentBlock == 'H'){	
+
+					if(!targetBlockPresent){
+						newBoard.placeBlockAt(new HorizontalBlock(), i, j);						
+					}else{
+						System.out.println("The input, you gave, is not valid.");
+						System.exit(0);
+					}
+
+				} else if(currentBlock == 'V') {
+
+					newBoard.placeBlockAt(new VerticalBlock(), i, j);	
+
+				} else if(currentBlock == 'T'){
+
+					if(count == 0){
+						newBoard.placeBlockAt(new TargetBlock(), i, j);
+						count++;
+						targetBlockPresent = true;
+					} else{
+						System.out.println("The input, you gave, is not valid.");
+						System.exit(0);
+
+					}
+
+				}
+
+			}
+		}
+		return newBoard;
 	}
 
 	private void initMenus() {
@@ -68,7 +177,8 @@ public class SimpleGUI extends JFrame implements ActionListener {
 		newGameMenuItem.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				JOptionPane.showMessageDialog(SimpleGUI.this, "Coming soon...");
+				board = loadNewPuzzle(2);
+				updateUI();
 			}
 		});
 		gameMenu.add(newGameMenuItem);
@@ -97,7 +207,6 @@ public class SimpleGUI extends JFrame implements ActionListener {
 	}
 	
 	private void initBoard() {
-		board = new GameBoard(NUM_COLS, NUM_ROWS);
 		buttonGrid = new GridButton[NUM_ROWS][NUM_COLS];
 		
 		setLayout(new GridLayout(NUM_ROWS, NUM_COLS));
@@ -112,13 +221,6 @@ public class SimpleGUI extends JFrame implements ActionListener {
 			}
 		}
 		
-		// add some blocks for testing...
-		board.placeBlockAt(new HorizontalBlock(), 0, 0);
-		board.placeBlockAt(new HorizontalBlock(), 4, 4);
-		board.placeBlockAt(new VerticalBlock(), 1, 3);
-		board.placeBlockAt(new VerticalBlock(), 3, 1);
-		board.placeBlockAt(new TargetBlock(), 2, 2);
-		
 		updateUI();
 	}
 
@@ -130,13 +232,13 @@ public class SimpleGUI extends JFrame implements ActionListener {
 				Block block = board.getBlockAt(row, col);
 				JButton cell = buttonGrid[row][col];
 				if (block == null)
-					cell.setBackground(Color.LIGHT_GRAY);
+					cell.setBackground(Color.WHITE);
 				else if (block instanceof TargetBlock)
-					cell.setBackground(Color.YELLOW);
-				else if (block instanceof HorizontalBlock)
-					cell.setBackground(Color.BLUE);
-				else if (block instanceof VerticalBlock)
 					cell.setBackground(Color.RED);
+				else if (block instanceof HorizontalBlock)
+					cell.setBackground(Color.YELLOW);
+				else if (block instanceof VerticalBlock)
+					cell.setBackground(Color.BLUE);
 			}
 		}
 	}
@@ -209,8 +311,16 @@ public class SimpleGUI extends JFrame implements ActionListener {
 			System.err.println("Invalid move!");
 		}
 		else {
+			Block tmpBlock = selectedBlock;
 			selectedBlock = null;
 			updateUI();
+			if(tmpBlock instanceof TargetBlock && col == NUM_COLS - 1){
+				System.out.println("You won!");	
+				JFrame parent = new JFrame();
+			    JOptionPane.showMessageDialog(parent, "You Won!");	
+			    System.exit(0);
+			}			
+			
 		}
 	}
 

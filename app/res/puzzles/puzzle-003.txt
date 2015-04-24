@@ -1,0 +1,6 @@
+5 5
+.VHHH
+VHV..
+.TVV.
+VHHV.
+.HV.H
